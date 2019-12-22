@@ -5,7 +5,6 @@ import java.io.File
 interface PassRule {
     fun verify(password: Int): Boolean
 }
-
 object AdjacentDigits : PassRule {
     override fun verify(password: Int): Boolean {
         return password.toString().windowed(size = 2).any { digitsPair -> digitsPair[0] == digitsPair[1] }
@@ -14,7 +13,18 @@ object AdjacentDigits : PassRule {
 
 object NonDecreasingDigits : PassRule {
     override fun verify(password: Int): Boolean {
-        return password.toString().windowed(size = 2).all { digitsPair -> digitsPair[0].toInt() <= digitsPair[1].toInt() }
+        var passwordMut = password
+
+        while (passwordMut > 0) {
+            val lastDigit = passwordMut % 10
+            passwordMut /= 10
+            val currentLastDigit = passwordMut % 10
+            if (currentLastDigit > lastDigit) {
+                return false
+            }
+        }
+
+        return true
     }
 }
 

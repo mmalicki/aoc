@@ -1,23 +1,29 @@
 package day4
 
 import java.io.File
-
+import kotlin.system.measureTimeMillis
 object StrictAdjacentDigits : PassRule {
     override fun verify(password: Int): Boolean {
-        var lastChar = password.toString().first()
-        var lastGroup = mutableListOf<Char>()
-        val groups = mutableListOf<List<Char>>(lastGroup)
-        password.toString().forEach { passwordChar ->
+        val passString = password.toString()
+        var lastChar = passString.first()
+        var adjacentChars = 0
+
+        passString.forEachIndexed { index, passwordChar ->
             if (passwordChar == lastChar) {
-                lastGroup.add(passwordChar)
+                adjacentChars++
             } else {
+                if (adjacentChars == 2) {
+                    return true
+                }
                 lastChar = passwordChar
-                lastGroup = mutableListOf(lastChar)
-                groups.add(lastGroup)
+                adjacentChars = 1
+            }
+            if (index == passString.lastIndex && adjacentChars == 2) {
+                return true
             }
         }
 
-        return groups.any { it.size == 2 }
+        return false
     }
 }
 
@@ -27,9 +33,11 @@ fun main() {
         .split("-")
         .map { it.toInt() }
 
-    val passwordRules = listOf(StrictAdjacentDigits, NonDecreasingDigits)
+    val passwordRules = listOf(NonDecreasingDigits, StrictAdjacentDigits)
 
-    val validPasswords = (start..end).filter { password -> passwordRules.all { it.verify(password) } }
-
-    println(validPasswords.size)
+    val t = measureTimeMillis {
+       val validPasswords = (start..end).filter { password -> passwordRules.all { it.verify(password) } }
+        println(validPasswords.size)
+    }
+    println(t)
 }
