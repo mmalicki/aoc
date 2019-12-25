@@ -1,4 +1,4 @@
-package day5
+package day5.part1
 
 
 import java.io.File
@@ -9,21 +9,21 @@ sealed class Instruction {
     abstract fun execute(program: MutableList<String>, index: Int): Int
 }
 
-class Add(private val fstMode: ParamMode, private val sndMode: ParamMode) : Instruction() {
+class Add(private val fstMode: day5.part2.ParamMode, private val sndMode: day5.part2.ParamMode) : Instruction() {
     override fun execute(program: MutableList<String>, index: Int): Int {
         val (fstArg, sndArg, trdArg) = program.subList(index + 1, index + 1 + 3)
-        val fstVal = if (fstMode == ParamMode.REFERENCE) program[fstArg.toInt()] else fstArg
-        val sndVal = if (sndMode == ParamMode.REFERENCE) program[sndArg.toInt()] else sndArg
+        val fstVal = if (fstMode == day5.part2.ParamMode.REFERENCE) program[fstArg.toInt()] else fstArg
+        val sndVal = if (sndMode == day5.part2.ParamMode.REFERENCE) program[sndArg.toInt()] else sndArg
         program[trdArg.toInt()] = (fstVal.toInt() + sndVal.toInt()).toString()
         return 4
     }
 }
 
-class Multiply(private val fstMode: ParamMode, private val sndMode: ParamMode) : Instruction() {
+class Multiply(private val fstMode: day5.part2.ParamMode, private val sndMode: day5.part2.ParamMode) : Instruction() {
     override fun execute(program: MutableList<String>, index: Int): Int {
         val (fstArg, sndArg, trdArg) = program.subList(index + 1, index + 1 + 3)
-        val fstVal = if (fstMode == ParamMode.REFERENCE) program[fstArg.toInt()] else fstArg
-        val sndVal = if (sndMode == ParamMode.REFERENCE) program[sndArg.toInt()] else sndArg
+        val fstVal = if (fstMode == day5.part2.ParamMode.REFERENCE) program[fstArg.toInt()] else fstArg
+        val sndVal = if (sndMode == day5.part2.ParamMode.REFERENCE) program[sndArg.toInt()] else sndArg
         program[trdArg.toInt()] = (fstVal.toInt() * sndVal.toInt()).toString()
         return 4
     }
@@ -38,10 +38,10 @@ object Input : Instruction() {
     }
 }
 
-class Output(private val mode: ParamMode) : Instruction() {
+class Output(private val mode: day5.part2.ParamMode) : Instruction() {
     override fun execute(program: MutableList<String>, index: Int): Int {
         val inputArg = program[index + 1]
-        val value = if (mode == ParamMode.REFERENCE) program[inputArg.toInt()] else inputArg
+        val value = if (mode == day5.part2.ParamMode.REFERENCE) program[inputArg.toInt()] else inputArg
         println(value)
         return 2
     }
@@ -65,14 +65,14 @@ fun parseInstruction(instruction: String): Instruction {
     }
 }
 
-fun getParam(modes: String, index: Int): ParamMode {
+fun getParam(modes: String, index: Int): day5.part2.ParamMode {
     return modes
         .reversed()
         .elementAtOrNull(index)
         ?.toString()
         ?.toInt()
-        ?.let { ParamMode.of(it) }
-        ?: ParamMode.REFERENCE
+        ?.let { day5.part2.ParamMode.of(it) }
+        ?: day5.part2.ParamMode.REFERENCE
 }
 
 enum class ParamMode(val mode: Int) {
