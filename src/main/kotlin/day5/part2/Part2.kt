@@ -1,45 +1,69 @@
 package day5.part2
 
 
+import day5.part2.Add.Companion.ADD
+import day5.part2.Equals.Companion.EQUALS
+import day5.part2.Halt.HALT
+import day5.part2.Input.INPUT
+import day5.part2.JumpIfFalse.Companion.JUMP_IF_FALSE
+import day5.part2.JumpIfTrue.Companion.JUMP_IF_TRUE
+import day5.part2.LessThan.Companion.LESS_THAN
+import day5.part2.Multiply.Companion.MULTIPLY
+import day5.part2.Output.Companion.OUTPUT
 import java.io.File
 import java.lang.IllegalArgumentException
 import kotlin.system.exitProcess
 
-sealed class InstructionResult(val value: Int)
+sealed class InstructionResult {
+    abstract fun calculateAddr(currentAddress: Int): Int
+}
 
-class RelativeOffset(value: Int) : InstructionResult(value)
+class RelativeOffset(private val value: Int) : InstructionResult() {
+    override fun calculateAddr(currentAddress: Int) = currentAddress + value
+}
 
-class AbsoluteOffset(value: Int) : InstructionResult(value)
+class AbsoluteOffset(private val value: Int) : InstructionResult() {
+    override fun calculateAddr(currentAddress: Int) = value
+}
 
 sealed class Instruction {
     abstract fun execute(program: MutableList<String>, index: Int): InstructionResult
 }
 
 class Add(private val fstMode: ParamMode, private val sndMode: ParamMode) : Instruction() {
+    companion object {
+        const val ADD = 1
+    }
     override fun execute(program: MutableList<String>, index: Int): InstructionResult {
         val (fstArg, sndArg, trdArg) = program.subList(index + 1, index + 1 + 3)
-        val fstVal = if (fstMode == ParamMode.REFERENCE) program[fstArg.toInt()] else fstArg
-        val sndVal = if (sndMode == ParamMode.REFERENCE) program[sndArg.toInt()] else sndArg
+        val fstVal = fstMode.calculateParam(program, fstArg)
+        val sndVal = sndMode.calculateParam(program, sndArg)
         program[trdArg.toInt()] = (fstVal.toInt() + sndVal.toInt()).toString()
         return RelativeOffset(4)
     }
 }
 
 class Multiply(private val fstMode: ParamMode, private val sndMode: ParamMode) : Instruction() {
+    companion object {
+        const val MULTIPLY = 2
+    }
     override fun execute(program: MutableList<String>, index: Int): InstructionResult {
         val (fstArg, sndArg, trdArg) = program.subList(index + 1, index + 1 + 3)
-        val fstVal = if (fstMode == ParamMode.REFERENCE) program[fstArg.toInt()] else fstArg
-        val sndVal = if (sndMode == ParamMode.REFERENCE) program[sndArg.toInt()] else sndArg
+        val fstVal = fstMode.calculateParam(program, fstArg)
+        val sndVal = sndMode.calculateParam(program, sndArg)
         program[trdArg.toInt()] = (fstVal.toInt() * sndVal.toInt()).toString()
         return RelativeOffset(4)
     }
 }
 
 class JumpIfTrue(private val fstMode: ParamMode, private val sndMode: ParamMode) : Instruction() {
+    companion object {
+        const val JUMP_IF_TRUE = 5
+    }
     override fun execute(program: MutableList<String>, index: Int): InstructionResult {
         val (fstArg, sndArg) = program.subList(index + 1, index + 1 + 2)
-        val fstVal = if (fstMode == ParamMode.REFERENCE) program[fstArg.toInt()] else fstArg
-        val sndVal = if (sndMode == ParamMode.REFERENCE) program[sndArg.toInt()] else sndArg
+        val fstVal = fstMode.calculateParam(program, fstArg)
+        val sndVal = sndMode.calculateParam(program, sndArg)
         return if (fstVal.toInt() != 0) {
             AbsoluteOffset(sndVal.toInt())
         } else {
@@ -49,10 +73,13 @@ class JumpIfTrue(private val fstMode: ParamMode, private val sndMode: ParamMode)
 }
 
 class JumpIfFalse(private val fstMode: ParamMode, private val sndMode: ParamMode) : Instruction() {
+    companion object {
+        const val JUMP_IF_FALSE = 6
+    }
     override fun execute(program: MutableList<String>, index: Int): InstructionResult {
         val (fstArg, sndArg) = program.subList(index + 1, index + 1 + 3)
-        val fstVal = if (fstMode == ParamMode.REFERENCE) program[fstArg.toInt()] else fstArg
-        val sndVal = if (sndMode == ParamMode.REFERENCE) program[sndArg.toInt()] else sndArg
+        val fstVal = fstMode.calculateParam(program, fstArg)
+        val sndVal = sndMode.calculateParam(program, sndArg)
         return if (fstVal.toInt() == 0) {
             AbsoluteOffset(sndVal.toInt())
         } else {
@@ -62,26 +89,33 @@ class JumpIfFalse(private val fstMode: ParamMode, private val sndMode: ParamMode
 }
 
 class LessThan(private val fstMode: ParamMode, private val sndMode: ParamMode) : Instruction() {
+    companion object {
+        const val LESS_THAN = 7
+    }
     override fun execute(program: MutableList<String>, index: Int): InstructionResult {
         val (fstArg, sndArg, trdArg) = program.subList(index + 1, index + 1 + 3)
-        val fstVal = if (fstMode == ParamMode.REFERENCE) program[fstArg.toInt()] else fstArg
-        val sndVal = if (sndMode == ParamMode.REFERENCE) program[sndArg.toInt()] else sndArg
+        val fstVal = fstMode.calculateParam(program, fstArg)
+        val sndVal = sndMode.calculateParam(program, sndArg)
         program[trdArg.toInt()] = if (fstVal.toInt() < sndVal.toInt()) "1" else "0"
         return RelativeOffset(4)
     }
 }
 
 class Equals(private val fstMode: ParamMode, private val sndMode: ParamMode) : Instruction() {
+    companion object {
+        const val EQUALS = 8
+    }
     override fun execute(program: MutableList<String>, index: Int): InstructionResult {
         val (fstArg, sndArg, trdArg) = program.subList(index + 1, index + 1 + 3)
-        val fstVal = if (fstMode == ParamMode.REFERENCE) program[fstArg.toInt()] else fstArg
-        val sndVal = if (sndMode == ParamMode.REFERENCE) program[sndArg.toInt()] else sndArg
+        val fstVal = fstMode.calculateParam(program, fstArg)
+        val sndVal = sndMode.calculateParam(program, sndArg)
         program[trdArg.toInt()] = if (fstVal == sndVal) "1" else "0"
         return RelativeOffset(4)
     }
 }
 
 object Input : Instruction() {
+    const val INPUT = 3
     override fun execute(program: MutableList<String>, index: Int): InstructionResult {
         val inputValue = readLine()!!
         val targetAddr = program[index + 1]
@@ -91,15 +125,19 @@ object Input : Instruction() {
 }
 
 class Output(private val mode: ParamMode) : Instruction() {
+    companion object {
+        const val OUTPUT = 4
+    }
     override fun execute(program: MutableList<String>, index: Int): InstructionResult {
         val inputArg = program[index + 1]
-        val value = if (mode == ParamMode.REFERENCE) program[inputArg.toInt()] else inputArg
+        val value = mode.calculateParam(program, inputArg)
         println(value)
         return RelativeOffset(2)
     }
 }
 
 object Halt : Instruction() {
+    const val HALT = 99
     override fun execute(program: MutableList<String>, index: Int): InstructionResult {
         exitProcess(0)
     }
@@ -108,33 +146,33 @@ object Halt : Instruction() {
 fun parseInstruction(instruction: String): Instruction {
     val modes = instruction.dropLast(2)
     return when (instruction.takeLast(2).toInt()) {
-        1 -> Add(
+        ADD -> Add(
             getParam(modes, 0),
             getParam(modes, 1)
         )
-        2 -> Multiply(
+        MULTIPLY -> Multiply(
             getParam(modes, 0),
             getParam(modes, 1)
         )
-        3 -> Input
-        4 -> Output(getParam(modes, 0))
-        5 -> JumpIfTrue(
+        INPUT -> Input
+        OUTPUT -> Output(getParam(modes, 0))
+        JUMP_IF_TRUE -> JumpIfTrue(
             getParam(modes, 0),
             getParam(modes, 1)
         )
-        6 -> JumpIfFalse(
+        JUMP_IF_FALSE -> JumpIfFalse(
             getParam(modes, 0),
             getParam(modes, 1)
         )
-        7 -> LessThan(
+        LESS_THAN -> LessThan(
             getParam(modes, 0),
             getParam(modes, 1)
         )
-        8 -> Equals(
+        EQUALS -> Equals(
             getParam(modes, 0),
             getParam(modes, 1)
         )
-        99 -> Halt
+        HALT -> Halt
         else -> throw IllegalArgumentException(instruction)
     }
 }
@@ -150,8 +188,14 @@ fun getParam(modes: String, index: Int): ParamMode {
 }
 
 enum class ParamMode(val mode: Int) {
-    REFERENCE(0),
-    VALUE(1);
+    REFERENCE(0) {
+        override fun calculateParam(program: MutableList<String>, param: String) = program[param.toInt()]
+    },
+    VALUE(1) {
+        override fun calculateParam(program: MutableList<String>, param: String) = param
+    };
+
+    abstract fun calculateParam(program: MutableList<String>, param: String): String
 
     companion object {
         fun of(param: Int) = values().find { it.mode == param }
@@ -172,9 +216,6 @@ fun runProgram(program: MutableList<String>) {
     while (true) {
         val instruction = parseInstruction(program[index])
         val offset = instruction.execute(program, index)
-        index = when (offset) {
-            is RelativeOffset -> index + offset.value
-            is AbsoluteOffset -> offset.value
-        }
+        index = offset.calculateAddr(index)
     }
 }
